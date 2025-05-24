@@ -9,6 +9,7 @@ export default function Cover({ url, editable, onChange }) {
   const [isUploading, setIsUploading] = useState(false);
 
   async function updateCover(ev) {
+    if (!session) return;
     const file = ev.target.files?.[0];
     if (file) {
       setIsUploading(true);

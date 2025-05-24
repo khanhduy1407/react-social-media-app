@@ -9,7 +9,7 @@ export default function SavedPostsPage() {
   const session = useSession();
   const supabase = useSupabaseClient();
   useEffect(() => {
-    if (!session?.user?.id) {
+    if (!session) {
       return;
     }
     supabase
@@ -24,7 +24,7 @@ export default function SavedPostsPage() {
           .in("id", postsIds)
           .then((result) => setPosts(result.data));
       });
-  }, [session?.user?.id]);
+  }, [session]);
   return (
     <Layout>
       <UserContextProvider>

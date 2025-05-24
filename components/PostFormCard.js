@@ -15,6 +15,7 @@ export default function PostFormCard({ onPost }) {
   const { profile } = useContext(UserContext);
 
   function createPost() {
+    if (!session) return;
     supabase
       .from("posts")
       .insert({
@@ -34,6 +35,7 @@ export default function PostFormCard({ onPost }) {
   }
 
   async function addPhotos(ev) {
+    if (!session) return;
     const files = ev.target.files;
     if (files.length > 0) {
       setIsUploading(true);

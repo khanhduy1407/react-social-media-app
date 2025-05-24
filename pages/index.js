@@ -17,7 +17,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (!session?.user?.id) {
+    if (!session) {
       return;
     }
     supabase
@@ -29,7 +29,7 @@ export default function Home() {
           setProfile(result.data[0]);
         }
       });
-  }, [session?.user?.id]);
+  }, [session]);
 
   function fetchPosts() {
     supabase

@@ -8,6 +8,7 @@ export default function Avatar({ size, url, editable, onChange }) {
   const session = useSession();
   const [isUploading, setIsUploading] = useState(false);
   async function handleAvatarChange(ev) {
+    if (!session) return;
     const file = ev.target.files?.[0];
     if (file) {
       setIsUploading(true);

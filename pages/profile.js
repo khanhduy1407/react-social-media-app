@@ -25,11 +25,11 @@ export default function ProfilePage() {
   const supabase = useSupabaseClient();
 
   useEffect(() => {
-    if (!userId) {
+    if (!userId && !session) {
       return;
     }
     fetchUser();
-  }, [userId]);
+  }, [userId, session]);
 
   function fetchUser() {
     supabase

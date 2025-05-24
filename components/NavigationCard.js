@@ -2,6 +2,7 @@ import Card from "./Card";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
+import Preloader from "./Preloader";
 
 export default function NavigationCard() {
   const session = useSession();
@@ -18,6 +19,7 @@ export default function NavigationCard() {
     await supabase.auth.signOut();
   }
 
+  if (!session) return <Preloader />;
   return (
     <Card noPadding={true}>
       <div className="px-4 py-2 flex justify-between md:block shadow-md shadow-gray-500 md:shadow-none">

@@ -8,7 +8,7 @@ export function UserContextProvider({ children }) {
   const supabase = useSupabaseClient();
   const [profile, setProfile] = useState(null);
   useEffect(() => {
-    if (!session?.user?.id) {
+    if (!session) {
       return;
     }
     supabase
@@ -18,7 +18,7 @@ export function UserContextProvider({ children }) {
       .then((result) => {
         setProfile(result.data?.[0]);
       });
-  }, [session?.user?.id]);
+  }, [session]);
   return (
     <UserContext.Provider value={{ profile }}>{children}</UserContext.Provider>
   );
