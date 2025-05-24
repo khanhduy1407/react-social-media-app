@@ -10,14 +10,11 @@ export default function NotificationsPage() {
       <Card noPadding={true}>
         <div className="">
           <div className="flex gap-2 items-center border-b border-b-gray-100 p-4">
-            <Link href={"/profile"}>
+            <Link href={""}>
               <Avatar />
             </Link>
             <div>
-              <Link
-                href={"/profile"}
-                className={"font-semibold mr-1 hover:underline"}
-              >
+              <Link href={""} className={"font-semibold mr-1 hover:underline"}>
                 John Doe
               </Link>
               đã thích
@@ -30,14 +27,11 @@ export default function NotificationsPage() {
             </div>
           </div>
           <div className="flex gap-2 items-center border-b border-b-gray-100 p-4">
-            <Link href={"/profile"}>
+            <Link href={""}>
               <Avatar />
             </Link>
             <div>
-              <Link
-                href={"/profile"}
-                className={"font-semibold mr-1 hover:underline"}
-              >
+              <Link href={""} className={"font-semibold mr-1 hover:underline"}>
                 John Doe
               </Link>
               đã thích
@@ -50,14 +44,11 @@ export default function NotificationsPage() {
             </div>
           </div>
           <div className="flex gap-2 items-center border-b border-b-gray-100 p-4">
-            <Link href={"/profile"}>
+            <Link href={""}>
               <Avatar />
             </Link>
             <div>
-              <Link
-                href={"/profile"}
-                className={"font-semibold mr-1 hover:underline"}
-              >
+              <Link href={""} className={"font-semibold mr-1 hover:underline"}>
                 John Doe
               </Link>
               đã thích
