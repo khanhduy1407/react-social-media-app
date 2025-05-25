@@ -27,6 +27,9 @@ export default function Avatar({ size, url, editable, onChange }) {
   if (size === "lg") {
     width = "w-24 md:w-36";
   }
+  if (size === "sm") {
+    width = "w-8 md:w-12";
+  }
   return (
     <div className={`${width} relative`}>
       <div className="rounded-full overflow-hidden">
