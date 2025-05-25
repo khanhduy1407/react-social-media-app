@@ -25,6 +25,28 @@ export default function ConversationPage() {
     if (!chatId && !session) return;
 
     fetchConversation();
+
+    const channel = supabase
+      .channel(`chat-${chatId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "chats",
+          filter: `id=eq.${chatId}`,
+        },
+        (payload) => {
+          console.log("Realtime update:", payload);
+          const updatedMessages = payload.new.messages;
+          setMessages([...updatedMessages].reverse());
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [chatId, session]);
 
   async function fetchConversation() {
