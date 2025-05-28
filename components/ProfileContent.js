@@ -33,7 +33,7 @@ export default function ProfileContent({ activeTab, userId }) {
   async function userPosts(userId) {
     const { data } = await supabase
       .from("posts")
-      .select("id, content, photos, created_at, author")
+      .select("id, content, photos, created_at, parent, from, author")
       .eq("author", userId);
     return data;
   }
