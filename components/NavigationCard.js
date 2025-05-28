@@ -48,9 +48,57 @@ export default function NavigationCard() {
           <span className="hidden md:block">Trang chủ</span>
         </Link>
         <Link
-          href={`/profile/${session.user.id}/friends`}
+          href={`/profile/${session.user.id}`}
           className={
-            pathname === `/profile/${session.user.id}/friends`
+            pathname === `/profile/${session.user.id}`
+              ? activeElementClasses
+              : nonActiveElementClasses
+          }
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+            />
+          </svg>
+          <span className="hidden md:block">Hồ sơ cá nhân</span>
+        </Link>
+        <Link
+          href={`/search`}
+          className={
+            pathname === `/search`
+              ? activeElementClasses
+              : nonActiveElementClasses
+          }
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="w-6 h-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+            />
+          </svg>
+          <span className="hidden md:block">Tìm kiếm</span>
+        </Link>
+        <Link
+          href={`/profile/${session.user.id}/follow`}
+          className={
+            pathname === `/profile/${session.user.id}/follow`
               ? activeElementClasses
               : nonActiveElementClasses
           }
@@ -69,7 +117,7 @@ export default function NavigationCard() {
               d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
             />
           </svg>
-          <span className="hidden md:block">Bạn bè</span>
+          <span className="hidden md:block">Theo dõi</span>
         </Link>
         <Link
           href={`/chat`}
@@ -118,30 +166,6 @@ export default function NavigationCard() {
             />
           </svg>
           <span className="hidden md:block">Bài viết đã lưu</span>
-        </Link>
-        <Link
-          href="/notifications"
-          className={
-            pathname === "/notifications"
-              ? activeElementClasses
-              : nonActiveElementClasses
-          }
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-            />
-          </svg>
-          <span className="hidden md:block">Thông báo</span>
         </Link>
         <button onClick={logout} className="w-full -my-2">
           <span

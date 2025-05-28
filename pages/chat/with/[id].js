@@ -127,8 +127,13 @@ export default function ChatWithPage() {
               <>
                 <div className="flex items-center gap-2">
                   <h1>Bắt đầu trò chuyện mới với</h1>
-                  <Avatar url={user.avatar} size={"sm"} />
-                  <h2 className="font-semibold">{user.name}</h2>
+                  <Link
+                    href={`/profile/${user.id}`}
+                    className="flex items-center gap-2"
+                  >
+                    <Avatar url={user.avatar} size={"sm"} />
+                    <h2 className="font-semibold">{user.name}</h2>
+                  </Link>
                 </div>
                 <div className="border grow rounded-full relative mt-4">
                   <input

@@ -179,7 +179,6 @@ export default function LoginPage() {
                           loginWithPassword();
                         } else {
                           setFormType(1);
-                          console.log("Switching to login form");
                         }
                       }}
                     >
@@ -192,7 +191,6 @@ export default function LoginPage() {
                           await signUpWithPassword();
                         } else {
                           setFormType(2);
-                          console.log("Switching to registration form");
                         }
                       }}
                     >

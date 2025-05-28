@@ -38,7 +38,6 @@ export default function Home() {
       .is("parent", null)
       .order("created_at", { ascending: false })
       .then((result) => {
-        console.log("posts", result);
         setPosts(result.data);
       });
   }

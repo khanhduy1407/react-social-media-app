@@ -1,12 +1,14 @@
 import PostCard from "./PostCard";
 import Card from "./Card";
-import FriendInfo from "./FriendInfo";
+import UserFollowInfo from "./UserFollowInfo";
 import { useEffect, useState } from "react";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 
 export default function ProfileContent({ activeTab, userId }) {
   const [posts, setPosts] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
   const supabase = useSupabaseClient();
   useEffect(() => {
     if (!userId) {
@@ -15,19 +17,23 @@ export default function ProfileContent({ activeTab, userId }) {
     if (activeTab === "posts") {
       loadPosts().then(() => {});
     }
+    if (activeTab === "follow") {
+      loadFollowers().then(() => {});
+      loadFollowing().then(() => {});
+    }
   }, [userId]);
 
   async function loadPosts() {
     const posts = await userPosts(userId);
     const profile = await userProfile(userId);
-    setPosts(posts);
+    setPosts(posts.reverse());
     setProfile(profile);
   }
 
   async function userPosts(userId) {
     const { data } = await supabase
       .from("posts")
-      .select("id, content, created_at, author")
+      .select("id, content, photos, created_at, author")
       .eq("author", userId);
     return data;
   }
@@ -35,6 +41,42 @@ export default function ProfileContent({ activeTab, userId }) {
   async function userProfile(userId) {
     const { data } = await supabase.from("profiles").select().eq("id", userId);
     return data?.[0];
+  }
+
+  async function loadFollowers() {
+    const profile = await userProfile(userId);
+    const followers = profile?.followers || [];
+
+    const list = await Promise.all(
+      followers.map(async (followerId) => {
+        const { data: followerProfile } = await supabase
+          .from("profiles")
+          .select()
+          .eq("id", followerId);
+        return followerProfile?.[0];
+      })
+    );
+
+    const filteredList = list.filter(Boolean);
+    setFollowers(filteredList);
+  }
+
+  async function loadFollowing() {
+    const profile = await userProfile(userId);
+    const following = profile?.following || [];
+
+    const list = await Promise.all(
+      following.map(async (followedId) => {
+        const { data: followedProfile } = await supabase
+          .from("profiles")
+          .select()
+          .eq("id", followedId);
+        return followedProfile?.[0];
+      })
+    );
+
+    const filteredList = list.filter(Boolean);
+    setFollowing(filteredList);
   }
 
   return (
@@ -66,31 +108,29 @@ export default function ProfileContent({ activeTab, userId }) {
           </Card>
         </div>
       )}
-      {activeTab === "friends" && (
+      {activeTab === "follow" && (
         <div>
           <Card>
-            <h2 className="text-3xl mb-2">Bạn bè</h2>
-            <div className="">
-              <div className="border-b border-b-gray-100 p-4 -mx-4">
-                <FriendInfo />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <h2 className="text-1/2xl mb-2">Người theo dõi</h2>
+                <div className="">
+                  {followers.map((follower, index) => (
+                    <div className="p-4 -mx-4" key={index}>
+                      <UserFollowInfo user={follower} />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="border-b border-b-gray-100 p-4 -mx-4">
-                <FriendInfo />
-              </div>
-              <div className="border-b border-b-gray-100 p-4 -mx-4">
-                <FriendInfo />
-              </div>
-              <div className="border-b border-b-gray-100 p-4 -mx-4">
-                <FriendInfo />
-              </div>
-              <div className="border-b border-b-gray-100 p-4 -mx-4">
-                <FriendInfo />
-              </div>
-              <div className="border-b border-b-gray-100 p-4 -mx-4">
-                <FriendInfo />
-              </div>
-              <div className="border-b border-b-gray-100 p-4 -mx-4">
-                <FriendInfo />
+              <div>
+                <h2 className="text-1/2xl mb-2">Đang theo dõi</h2>
+                <div className="">
+                  {following.map((followed, index) => (
+                    <div className="p-4 -mx-4" key={index}>
+                      <UserFollowInfo user={followed} />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </Card>

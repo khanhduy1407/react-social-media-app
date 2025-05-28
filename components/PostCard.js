@@ -6,6 +6,7 @@ import Link from "next/link";
 import ReactTimeAgo from "react-time-ago";
 import { UserContext } from "../contexts/UserContext";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import ImageZoom from "./ImageZoom";
 
 export default function PostCard({
   id,
@@ -13,19 +14,38 @@ export default function PostCard({
   created_at,
   photos,
   profiles: authorProfile,
+  parent = null,
+  from = null,
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [likes, setLikes] = useState([]);
   const [comments, setComments] = useState([]);
+  const [shares, setShares] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [isSaved, setIsSaved] = useState(false);
+  const [isComment, setIsComment] = useState(false);
+  const [commentFrom, setCommentFrom] = useState(null);
+  const [commentFromComment, setCommentFromComment] = useState(null);
+  const [isShared, setIsShared] = useState(false);
+  const [shareFrom, setShareFrom] = useState(null);
+  const [visible, setVisible] = useState(true);
+
   const { profile: myProfile } = useContext(UserContext);
+
   const supabase = useSupabaseClient();
+
   useEffect(() => {
     fetchLikes();
     fetchComments();
-    if (myProfile?.id) fetchIsSaved();
+    fetchShares();
+    console.log("My profile ID:", myProfile?.id);
+    if (myProfile?.id) {
+      fetchIsSaved();
+      fetchIsShared();
+      fetchIsComment();
+    }
   }, [myProfile?.id]);
+
   function fetchIsSaved() {
     supabase
       .from("saved_posts")
@@ -40,6 +60,41 @@ export default function PostCard({
         }
       });
   }
+
+  function fetchIsShared() {
+    if (from) {
+      setIsShared(true);
+      setShareFrom(from);
+    } else {
+      setIsShared(false);
+      setShareFrom(null);
+    }
+  }
+
+  function fetchIsComment() {
+    if (parent) {
+      setIsComment(true);
+      setCommentFrom(parent);
+      // kiểm tra xem parent là bài viết hay bình luận
+      supabase
+        .from("posts")
+        .select("id, parent")
+        .eq("id", parent)
+        .then((parentResult) => {
+          if (parentResult.data.length > 0 && parentResult.data[0].parent) {
+            // nếu parent có parent thì là bình luận
+            setCommentFromComment(parentResult.data[0].id);
+          } else {
+            // nếu không thì là bài viết
+            setCommentFromComment(null);
+          }
+        });
+    } else {
+      setIsComment(false);
+      setCommentFrom(null);
+    }
+  }
+
   function fetchLikes() {
     supabase
       .from("likes")
@@ -47,6 +102,7 @@ export default function PostCard({
       .eq("post_id", id)
       .then((result) => setLikes(result.data));
   }
+
   function fetchComments() {
     supabase
       .from("posts")
@@ -54,14 +110,25 @@ export default function PostCard({
       .eq("parent", id)
       .then((result) => setComments(result.data));
   }
+
+  function fetchShares() {
+    supabase
+      .from("posts")
+      .select()
+      .eq("from", id)
+      .then((result) => setShares(result.data));
+  }
+
   function openDropdown(e) {
     e.stopPropagation();
     setDropdownOpen(true);
   }
+
   function handleClickOutsideDropdown(e) {
     e.stopPropagation();
     setDropdownOpen(false);
   }
+
   function toggleSave() {
     if (isSaved) {
       supabase
@@ -123,11 +190,73 @@ export default function PostCard({
         parent: id,
       })
       .then((result) => {
-        console.log(result);
         fetchComments();
         setCommentText("");
       });
   }
+
+  function handleCopyLink() {
+    const url = window.location.origin + "/post/" + id;
+    navigator.clipboard.writeText(url).then(() => {
+      alert(`Đã sao chép liên kết ${isComment ? "bình luận" : "bài viết"}!`);
+    });
+  }
+
+  async function deletePost() {
+    if (
+      confirm(
+        "Bạn có chắc muốn xóa bài viết này không? Điều này sẽ xóa cả bình luận, lượt thích liên quan và những người đã lưu bài viết này."
+      )
+    ) {
+      try {
+        // Xóa các dữ liệu liên quan trước
+        await supabase.from("likes").delete().eq("post_id", id);
+        console.log("Likes deleted");
+
+        await supabase.from("posts").delete().eq("parent", id);
+        console.log("Comments deleted");
+
+        await supabase.from("saved_posts").delete().eq("post_id", id);
+        console.log("Saved posts deleted");
+
+        // Sau cùng mới xóa chính bài viết
+        const { error } = await supabase.from("posts").delete().eq("id", id);
+        if (error) throw error;
+        console.log("Post deleted");
+        alert("Bài viết đã được xóa thành công!");
+
+        // xóa component khỏi DOM thay vì phải reload trang
+        setVisible(false);
+      } catch (error) {
+        console.error(
+          "Lỗi khi xóa bài viết hoặc dữ liệu liên quan:",
+          error.message
+        );
+      }
+    }
+  }
+
+  function sharePost() {
+    if (confirm("Bạn có chắc muốn chia sẻ bài viết này không?")) {
+      supabase
+        .from("posts")
+        .insert({
+          content: content,
+          photos: photos,
+          author: myProfile.id,
+          from: id,
+        })
+        .then((result) => {
+          if (result.error) {
+            console.error("Error sharing post:", result.error);
+          } else {
+            alert("Bài viết đã được chia sẻ thành công!");
+          }
+        });
+    }
+  }
+
+  if (!visible) return null;
 
   return (
     <Card>
@@ -146,7 +275,39 @@ export default function PostCard({
                 {authorProfile.name}
               </span>
             </Link>
-            đã chia sẻ một bài viết
+            {isShared ? (
+              <>
+                đã chia sẻ lại{" "}
+                <Link
+                  href={`/post/${shareFrom}`}
+                  className="text-blue-500 hover:underline"
+                >
+                  một bài viết
+                </Link>
+              </>
+            ) : commentFromComment != null && isComment ? (
+              <>
+                đã trả lời{" "}
+                <Link
+                  href={`/post/${commentFromComment}`}
+                  className="text-blue-500 hover:underline"
+                >
+                  một bình luận
+                </Link>
+              </>
+            ) : commentFromComment == null && isComment ? (
+              <>
+                đã bình luận trong{" "}
+                <Link
+                  href={`/post/${commentFrom}`}
+                  className="text-blue-500 hover:underline"
+                >
+                  một bài viết
+                </Link>
+              </>
+            ) : (
+              "đã đăng một bài viết"
+            )}
           </p>
           <p className="text-gray-500 text-sm">
             <ReactTimeAgo date={new Date(created_at).getTime()} />
@@ -210,89 +371,50 @@ export default function PostCard({
                           />
                         </svg>
                       )}
-                      {isSaved ? "Bỏ lưu bài viết" : "Lưu bài viết"}
+                      {isSaved ? "Bỏ lưu" : "Lưu"}{" "}
+                      {isComment ? "bình luận" : "bài viết"}
                     </span>
                   </button>
-                  <a
-                    href=""
-                    className="flex gap-3 py-2 my-2 hover:bg-socialBlue hover:text-white -mx-4 px-4 rounded-md transition-all hover:scale-110 hover:shadow-md shadow-gray-300"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M3.124 7.5A8.969 8.969 0 015.292 3m13.416 0a8.969 8.969 0 012.168 4.5"
-                      />
-                    </svg>
-                    Bật thông báo
-                  </a>
-                  <a
-                    href=""
-                    className="flex gap-3 py-2 my-2 hover:bg-gray-500 hover:text-white -mx-4 px-4 rounded-md transition-all hover:scale-110 hover:shadow-md shadow-gray-300"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                    Ẩn bài viết
-                  </a>
-                  <a
-                    href=""
-                    className="flex gap-3 py-2 my-2 hover:bg-red-500 hover:text-white -mx-4 px-4 rounded-md transition-all hover:scale-110 hover:shadow-md shadow-gray-300"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-                      />
-                    </svg>
-                    Xóa bài viết
-                  </a>
-                  <a
-                    href=""
-                    className="flex gap-3 py-2 my-2 hover:bg-yellow-500 hover:text-white -mx-4 px-4 rounded-md transition-all hover:scale-110 hover:shadow-md shadow-gray-300"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-6 h-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                      />
-                    </svg>
-                    Báo cáo
-                  </a>
+                  <button onClick={handleCopyLink} className="w-full -my-2">
+                    <span className="flex -mx-4 hover:shadow-md gap-3 py-2 my-2 hover:bg-socialBlue hover:text-white px-4 rounded-md transition-all hover:scale-110 shadow-gray-300">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="size-6"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184"
+                        />
+                      </svg>
+                      Copy link {isComment ? "bình luận" : "bài viết"}
+                    </span>
+                  </button>
+                  {myProfile?.id === authorProfile.id && (
+                    <button onClick={deletePost} className="w-full -my-2">
+                      <span className="flex gap-3 py-2 my-2 hover:bg-red-500 hover:text-white -mx-4 px-4 rounded-md transition-all hover:scale-110 hover:shadow-md shadow-gray-300">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.5}
+                          stroke="currentColor"
+                          className="w-6 h-6"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                          />
+                        </svg>
+                        Xóa {isComment ? "bình luận" : "bài viết"}
+                      </span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -302,10 +424,20 @@ export default function PostCard({
       <div>
         <p className="my-3 text-sm">{content}</p>
         {photos?.length > 0 && (
-          <div className="flex gap-4">
+          <div
+            className={
+              photos.length >= 3
+                ? "columns-1 sm:columns-2 md:columns-3 gap-4 space-y-4"
+                : "flex gap-4"
+            }
+          >
             {photos.map((photo) => (
-              <div key={photo} className="">
-                <img src={photo} className="rounded-md" alt="" />
+              <div key={photo} className="break-inside-avoid">
+                <ImageZoom
+                  src={photo}
+                  className="w-full rounded-md mb-4"
+                  alt=""
+                />
               </div>
             ))}
           </div>
@@ -346,7 +478,7 @@ export default function PostCard({
           </svg>
           {comments.length}
         </button>
-        <button className="flex gap-2 items-center">
+        <button className="flex gap-2 items-center" onClick={sharePost}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -361,7 +493,7 @@ export default function PostCard({
               d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"
             />
           </svg>
-          0
+          {shares?.length}
         </button>
       </div>
       <div className="flex mt-4 gap-3">

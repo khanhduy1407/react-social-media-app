@@ -37,7 +37,6 @@ export default function ConversationPage() {
           filter: `id=eq.${chatId}`,
         },
         (payload) => {
-          console.log("Realtime update:", payload);
           const updatedMessages = payload.new.messages;
           setMessages([...updatedMessages].reverse());
         }
@@ -100,7 +99,6 @@ export default function ConversationPage() {
         .select("messages")
         .eq("id", chatId);
       if (messagesError) throw messagesError;
-      console.log("Loaded messages:", [...data[0].messages].reverse());
       setMessages([...data[0].messages].reverse());
     } catch (error) {
       console.error("Error loading messages:", error);
@@ -173,8 +171,13 @@ export default function ConversationPage() {
               <>
                 <div className="flex items-center gap-2">
                   <h1>Đang trò chuyện với</h1>
-                  <Avatar url={user.avatar} size={"sm"} />
-                  <h2 className="font-semibold">{user.name}</h2>
+                  <Link
+                    href={`/profile/${user.id}`}
+                    className="flex items-center gap-2"
+                  >
+                    <Avatar url={user.avatar} size={"sm"} />
+                    <h2 className="font-semibold">{user.name}</h2>
+                  </Link>
                 </div>
                 <div className="border grow rounded-full relative mt-4">
                   <input
